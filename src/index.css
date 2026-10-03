@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+/* Dark, warm near-black surfaces (no blue). Accent is the coral of the WALRUS logo. */
+@theme {
+  --color-canvas: #0a0909;
+  --color-panel: #121010;
+  --color-raised: #1a1717;
+  --color-line: #272222;
+  --color-line-strong: #3a3333;
+  --color-ink: #efeaea;
+  --color-muted: #a39b9b;
+  --color-faint: #6f6767;
+  --color-accent: #f4586a;
+  --color-accent-hover: #ff7282;
+  --color-accent-soft: #2a1114;
+  --color-accent-ink: #1a0709;
+  --color-ok: #5fc48a;
+  --color-warn: #e8b04b;
+  --color-bad: #ff8a80;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+input[type="range"] {
+  accent-color: var(--color-accent);
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Thin dark scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-strong) transparent;
+}
+
+/* Range sliders: accent fill up to the thumb, ring on hover/focus */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  cursor: pointer;
+  background: linear-gradient(to right, var(--color-accent) var(--fill, 0%), var(--color-line-strong) var(--fill, 0%));
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-ink);
+  border: 3px solid var(--color-accent);
+  box-shadow: 0 0 0 0 rgba(244, 88, 106, 0.2);
+  transition: box-shadow 0.15s;
+}
+input[type="range"]:hover::-webkit-slider-thumb,
+input[type="range"]:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 6px rgba(244, 88, 106, 0.2);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-ink);
+  border: 3px solid var(--color-accent);
+}
+input[type="range"]::-moz-range-track {
+  background: transparent;
+}
+
+/* Selects: custom chevron instead of the browser arrow */
+select {
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a39b9b' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.25rem;
+  cursor: pointer;
+}
+
+input[type="checkbox"] {
+  accent-color: var(--color-accent);
+}
+
+/* The editor's textarea text is transparent (the highlight layer shows through); keep the
+   selection visible without covering the highlighted text. */
+textarea::selection {
+  background: rgba(244, 88, 106, 0.35);
+  color: transparent;
+}
