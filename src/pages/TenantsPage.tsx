@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { ALL_SCOPES, type ApiKey, type IssuedKey, type Scope } from '../api/types'
-import { Badge, Button, Card, CopyButton, Empty, Notice, PageHeader, timeAgo } from '../components/ui'
+import { Badge, Button, Card, CopyButton, Empty, Notice, PageHeader } from '../components/ui'
 import { useApp } from '../context/appContext'
+import { useI18n } from '../i18n/i18nContext'
 
 const SCOPE_HINT: Record<Scope, string> = {
   'schema:write': 'push schemas (platform CI)',
@@ -19,13 +20,14 @@ const EXPIRY = [
 
 export function TenantsPage() {
   const { api, tenants, tenantId, setTenantId, refreshTenants } = useApp()
+  const { t, timeAgo, date } = useI18n()
   const [keys, setKeys] = useState<ApiKey[]>([])
   const [name, setName] = useState('')
   const [scopes, setScopes] = useState<Scope[]>(['ingest', 'recommend'])
   const [days, setDays] = useState(90)
   const [issued, setIssued] = useState<IssuedKey | null>(null)
 
-  const tenant = tenants.find((t) => t.id === tenantId)
+  const tenant = tenants.find((tn) => tn.id === tenantId)
   const loadKeys = useCallback(async () => setKeys(await api.listKeys(tenantId)), [api, tenantId])
   useEffect(() => {
     setIssued(null)
@@ -35,10 +37,10 @@ export function TenantsPage() {
   async function createTenant(e: FormEvent) {
     e.preventDefault()
     if (!name.trim()) return
-    const t = await api.createTenant(name.trim())
+    const created = await api.createTenant(name.trim())
     setName('')
     await refreshTenants()
-    setTenantId(t.id)
+    setTenantId(created.id)
   }
 
   async function issue(e: FormEvent) {
@@ -53,33 +55,33 @@ export function TenantsPage() {
   return (
     <>
       <PageHeader
-        title="Tenants & keys"
-        subtitle="Each tenant has its own schema, data and API keys. A key identifies its tenant and carries scopes; the secret is shown once."
+        title={t('Tenants & keys')}
+        subtitle={t('Each tenant has its own schema, data and API keys. A key identifies its tenant and carries scopes; the secret is shown once.')}
       />
 
       {api.mode === 'live' && (
         <div className="mb-6">
-          <Notice tone="warn" title="Not available on this engine yet">
-            The engine runs as a single default tenant for now. Creating tenants and issuing or revoking keys arrives with the key
-            system; use <span className="font-mono">npm run dev:mock</span> to preview this page.
+          <Notice tone="warn" title={t('Not available on this engine yet')}>
+            {t('The engine runs as a single default tenant for now. Creating tenants and issuing or revoking keys arrives with the key system; use')}{' '}
+            <span className="font-mono">npm run dev:mock</span> {t('to preview this page.')}
           </Notice>
         </div>
       )}
 
       <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
         <div className="space-y-6">
-          <Card title="Tenants">
+          <Card title={t('Tenants')}>
             <ul className="mb-4 space-y-1">
-              {tenants.map((t) => (
-                <li key={t.id}>
+              {tenants.map((tn) => (
+                <li key={tn.id}>
                   <button
-                    onClick={() => setTenantId(t.id)}
+                    onClick={() => setTenantId(tn.id)}
                     className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors ${
-                      t.id === tenantId ? 'bg-accent-soft text-accent' : 'text-muted hover:bg-raised hover:text-ink'
+                      tn.id === tenantId ? 'bg-accent-soft text-accent' : 'text-muted hover:bg-raised hover:text-ink'
                     }`}
                   >
-                    <span>{t.name}</span>
-                    <span className="font-mono text-xs text-faint">{t.id}</span>
+                    <span>{tn.name}</span>
+                    <span className="font-mono text-xs text-faint">{tn.id}</span>
                   </button>
                 </li>
               ))}
@@ -88,28 +90,28 @@ export function TenantsPage() {
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="new tenant name"
+                placeholder={t('new tenant name')}
                 className="min-w-0 flex-1 rounded-lg border border-line-strong bg-raised px-3 py-2 text-sm placeholder:text-faint"
               />
               <Button type="submit" variant="primary" disabled={!name.trim() || api.mode === 'live'}>
-                Create
+                {t('Create')}
               </Button>
             </form>
           </Card>
         </div>
 
         <div className="space-y-6">
-          <Card title={`Issue a key for ${tenant?.name ?? '…'}`}>
+          <Card title={t('Issue a key for {name}', { name: tenant?.name ?? '…' })}>
             <form onSubmit={issue} className="space-y-4">
               <fieldset>
-                <legend className="mb-2 text-xs uppercase tracking-wider text-faint">Scopes</legend>
+                <legend className="mb-2 text-xs uppercase tracking-wider text-faint">{t('Scopes')}</legend>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {ALL_SCOPES.map((s) => (
                     <label key={s} className="flex items-start gap-2 rounded-lg border border-line bg-raised px-3 py-2 text-sm">
                       <input type="checkbox" checked={scopes.includes(s)} onChange={() => toggle(s)} className="mt-1 accent-accent" />
                       <span>
                         <span className="font-mono text-xs">{s}</span>
-                        <span className="block text-xs text-faint">{SCOPE_HINT[s]}</span>
+                        <span className="block text-xs text-faint">{t(SCOPE_HINT[s])}</span>
                       </span>
                     </label>
                   ))}
@@ -120,24 +122,24 @@ export function TenantsPage() {
                   value={days}
                   onChange={(e) => setDays(Number(e.target.value))}
                   className="rounded-lg border border-line-strong bg-raised px-3 py-2 text-sm"
-                  aria-label="Expiry"
+                  aria-label={t('Expiry')}
                 >
                   {EXPIRY.map((x) => (
                     <option key={x.days} value={x.days}>
-                      {x.label}
+                      {t(x.label)}
                     </option>
                   ))}
                 </select>
                 <Button type="submit" variant="primary" disabled={scopes.length === 0 || api.mode === 'live'}>
-                  Issue key
+                  {t('Issue key')}
                 </Button>
               </div>
             </form>
 
             {issued && (
               <div className="mt-5 space-y-2">
-                <Notice tone="accent" title="Copy this key now">
-                  It is shown once and stored only as a hash. If you lose it, revoke it and issue a new one.
+                <Notice tone="accent" title={t('Copy this key now')}>
+                  {t('It is shown once and stored only as a hash. If you lose it, revoke it and issue a new one.')}
                 </Notice>
                 <div className="flex items-center gap-2">
                   <code className="min-w-0 flex-1 overflow-x-auto rounded-lg border border-line-strong bg-canvas px-3 py-2 font-mono text-xs">
@@ -149,9 +151,9 @@ export function TenantsPage() {
             )}
           </Card>
 
-          <Card title="Keys">
+          <Card title={t('Keys')}>
             {keys.length === 0 ? (
-              <Empty>No keys for this tenant yet.</Empty>
+              <Empty>{t('No keys for this tenant yet.')}</Empty>
             ) : (
               <ul className="divide-y divide-line">
                 {keys.map((k) => {
@@ -165,19 +167,19 @@ export function TenantsPage() {
                         ))}
                       </span>
                       {k.revokedAt ? (
-                        <Badge tone="bad">revoked</Badge>
+                        <Badge tone="bad">{t('revoked')}</Badge>
                       ) : expired ? (
-                        <Badge tone="warn">expired</Badge>
+                        <Badge tone="warn">{t('expired')}</Badge>
                       ) : (
-                        <Badge tone="ok">active</Badge>
+                        <Badge tone="ok">{t('active')}</Badge>
                       )}
                       <span className="text-xs text-faint">
-                        created {timeAgo(k.createdAt)} · last used {timeAgo(k.lastUsedAt)}
-                        {k.expiresAt && !expired && ` · expires ${new Date(k.expiresAt).toLocaleDateString()}`}
+                        {t('created {when} · last used {used}', { when: timeAgo(k.createdAt), used: timeAgo(k.lastUsedAt) })}
+                        {k.expiresAt && !expired && ` · ${t('expires {date}', { date: date(k.expiresAt) })}`}
                       </span>
                       {!k.revokedAt && (
                         <Button variant="danger" className="ml-auto" onClick={() => void api.revokeKey(k.id).then(loadKeys)}>
-                          Revoke
+                          {t('Revoke')}
                         </Button>
                       )}
                     </li>

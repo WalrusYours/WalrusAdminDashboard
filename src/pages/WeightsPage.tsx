@@ -2,6 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { Badge, Button, Card, Empty, Notice, PageHeader, Slider, cx } from '../components/ui'
 import { useDraft } from '../context/draftContext'
+import { useI18n } from '../i18n/i18nContext'
 import {
   IDENT,
   deletePreset,
@@ -18,6 +19,7 @@ const f2 = (n: number) => (Math.round(n * 100) / 100).toFixed(2)
 
 export function WeightsPage() {
   const { text, setText, active, dirty } = useDraft()
+  const { t, tp } = useI18n()
   const summary = useMemo(() => summarize(text), [text])
   const errorCount = useMemo(() => (text.trim() ? validateSchema(text).length : 0), [text])
   const changeCount = useMemo(() => (dirty ? diffSchemas(active?.yaml ?? null, text).changes.length : 0), [dirty, active, text])
@@ -28,13 +30,12 @@ export function WeightsPage() {
   if (!summary || summary.signals.length === 0) {
     return (
       <>
-        <PageHeader title="Weights" />
+        <PageHeader title={t('Weights')} />
         <Empty>
-          This tenant has no schema with signals yet.{' '}
+          {t('This tenant has no schema with signals yet.')}{' '}
           <Link to="/schema" className="text-accent">
-            Upload a schema
-          </Link>{' '}
-          first.
+            {t('Upload a schema first')}
+          </Link>
         </Empty>
       </>
     )
@@ -60,26 +61,25 @@ export function WeightsPage() {
   return (
     <>
       <PageHeader
-        title="Weights"
-        subtitle="Set each signal's default weight, then try the user-facing knobs to see the weights they resolve to. Edits go into the schema draft; publish them from the Schema page."
+        title={t('Weights')}
+        subtitle={t("Set each signal's default weight, then try the user-facing knobs to see the weights they resolve to. Edits go into the schema draft; publish them from the Schema page.")}
       />
 
       {errorCount > 0 && (
         <div className="mb-6">
-          <Notice tone="warn" title="The draft has validation problems">
-            Weights still preview, but fix the draft on the{' '}
+          <Notice tone="warn" title={t('The draft has validation problems')}>
+            {t('Weights still preview, but fix the draft before applying.')}{' '}
             <Link to="/schema" className="text-accent">
-              Schema page
-            </Link>{' '}
-            before applying.
+              {t('Open the Schema page')}
+            </Link>
           </Notice>
         </div>
       )}
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card title="Signal defaults">
+        <Card title={t('Signal defaults')}>
           <p className="mb-4 text-xs text-faint">
-            The weight a signal has when the user has not touched any knob. Knob mappings override these.
+            {t('The weight a signal has when the user has not touched any knob. Knob mappings override these.')}
           </p>
           <ul className="space-y-5">
             {summary.signals.map((s) => (
@@ -88,12 +88,12 @@ export function WeightsPage() {
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">{s.id}</span>
                     <Badge>{s.type}</Badge>
-                    {s.locked && <Badge tone="warn">locked</Badge>}
+                    {s.locked && <Badge tone="warn">{t('locked')}</Badge>}
                     <button
                       className="text-xs text-faint hover:text-warn"
                       onClick={() => setText(setLocked(text, { kind: 'signal', id: s.id }, !s.locked))}
                     >
-                      {s.locked ? 'unlock' : 'lock'}
+                      {s.locked ? t('unlock') : t('lock')}
                     </button>
                   </div>
                   <input
@@ -102,8 +102,8 @@ export function WeightsPage() {
                     value={s.default}
                     disabled={s.locked}
                     onChange={(e) => setText(setSignalDefault(text, s.id, Number(e.target.value) || 0))}
-                    className="w-20 rounded-md border border-line-strong bg-raised px-2 py-1 text-right font-mono text-sm"
-                    aria-label={`${s.id} default weight`}
+                    className="w-20 rounded-md border border-line-strong bg-raised px-2 py-1 text-right font-mono text-sm disabled:cursor-not-allowed disabled:opacity-40"
+                    aria-label={`${s.id} ${t('default weight')}`}
                   />
                 </div>
                 <Slider
@@ -113,7 +113,7 @@ export function WeightsPage() {
                   step={0.05}
                   value={s.default}
                   onChange={(v) => setText(setSignalDefault(text, s.id, v))}
-                  label={`${s.id} default weight slider`}
+                  label={`${s.id} ${t('default weight slider')}`}
                 />
               </li>
             ))}
@@ -122,25 +122,21 @@ export function WeightsPage() {
 
         <div className="space-y-6">
           <Card
-            title="Try the knobs"
+            title={t('Try the knobs')}
             action={
               <Button variant="ghost" onClick={() => setKnobVals({})}>
-                Reset
+                {t('Reset')}
               </Button>
             }
           >
             {summary.knobs.length === 0 ? (
-              <p className="text-sm text-faint">This schema declares no knobs.</p>
+              <p className="text-sm text-faint">{t('This schema declares no knobs.')}</p>
             ) : (
               <>
                 {Object.keys(summary.presets).length > 0 && (
                   <div className="mb-5 flex flex-wrap gap-2">
                     {Object.keys(summary.presets).map((p) => (
-                      <Button
-                        key={p}
-                        onClick={() => loadPreset(p)}
-                        className={cx(p === activePreset && 'border-accent text-accent')}
-                      >
+                      <Button key={p} onClick={() => loadPreset(p)} className={cx(p === activePreset && 'border-accent text-accent')}>
                         {p}
                       </Button>
                     ))}
@@ -165,7 +161,7 @@ export function WeightsPage() {
             )}
           </Card>
 
-          <Card title="Resolved weights">
+          <Card title={t('Resolved weights')}>
             <ul className="space-y-3">
               {summary.signals.map((s) => {
                 const w = weights[s.id]
@@ -188,7 +184,7 @@ export function WeightsPage() {
                         <span
                           className="absolute -top-0.5 h-3 w-px bg-ink/70"
                           style={{ left: `${Math.min(100, (baseline[s.id] / scale) * 100)}%` }}
-                          title="schema default"
+                          title={t('schema default')}
                         />
                       )}
                     </div>
@@ -198,7 +194,7 @@ export function WeightsPage() {
             </ul>
             {Object.keys(meta).length > 0 && (
               <div className="mt-5 border-t border-line pt-4">
-                <div className="mb-2 text-xs uppercase tracking-wider text-faint">Meta-parameters</div>
+                <div className="mb-2 text-xs uppercase tracking-wider text-faint">{t('Meta-parameters')}</div>
                 <dl className="grid grid-cols-[1fr_auto] gap-y-1 font-mono text-xs">
                   {Object.entries(meta).map(([k, v]) => (
                     <div key={k} className="contents">
@@ -218,9 +214,9 @@ export function WeightsPage() {
             )}
           </Card>
 
-          <Card title="Presets">
+          <Card title={t('Presets')}>
             {Object.keys(summary.presets).length === 0 ? (
-              <p className="mb-4 text-sm text-faint">No presets in this schema.</p>
+              <p className="mb-4 text-sm text-faint">{t('No presets in this schema.')}</p>
             ) : (
               <ul className="mb-4 divide-y divide-line">
                 {Object.entries(summary.presets).map(([name, vals]) => (
@@ -232,7 +228,7 @@ export function WeightsPage() {
                         .join('  ')}
                     </span>
                     <Button variant="danger" className="ml-auto" onClick={() => setText(deletePreset(text, name))}>
-                      Remove
+                      {t('Remove')}
                     </Button>
                   </li>
                 ))}
@@ -246,11 +242,11 @@ export function WeightsPage() {
                 className="min-w-0 flex-1 rounded-lg border border-line-strong bg-raised px-3 py-2 font-mono text-sm placeholder:text-faint"
               />
               <Button disabled={!nameOk || summary.knobs.length === 0} onClick={() => setText(setPreset(text, presetName, current))}>
-                Save current knobs
+                {t('Save current knobs')}
               </Button>
             </div>
             {presetName && !nameOk && (
-              <p className="mt-2 text-xs text-bad">Use lowercase letters, digits and underscores, starting with a letter.</p>
+              <p className="mt-2 text-xs text-bad">{t('Use lowercase letters, digits and underscores, starting with a letter.')}</p>
             )}
           </Card>
         </div>
@@ -259,13 +255,13 @@ export function WeightsPage() {
       {dirty && (
         <div className="sticky bottom-4 mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-accent/40 bg-panel px-5 py-3 shadow-2xl shadow-black/60">
           <span className="text-sm">
-            <span className="font-semibold text-accent">{changeCount}</span> unsaved change{changeCount === 1 ? '' : 's'} in the schema draft
+            {tp('{count} unsaved changes', changeCount)} {t('in the schema draft')}
           </span>
           <Link
             to="/schema"
             className="rounded-lg bg-accent px-3.5 py-2 text-sm font-semibold text-accent-ink hover:bg-accent-hover"
           >
-            Review and apply
+            {t('Review and apply')}
           </Link>
         </div>
       )}
@@ -275,7 +271,7 @@ export function WeightsPage() {
 
 /** Knob labels are written as "left <-> right"; show each end on its side of the slider. */
 function KnobRow({ label, value, children }: { label: string; value: number; children: ReactNode }) {
-  const [left, right] = label.split(/s*<->s*/)
+  const [left, right] = label.split(/\s*<->\s*/)
   return (
     <div>
       <div className="mb-2.5 grid grid-cols-[1fr_auto_1fr] items-baseline gap-3 text-sm">

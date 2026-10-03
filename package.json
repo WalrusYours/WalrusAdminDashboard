@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "dev:mock": "vite --mode mock"
+    "dev:mock": "vite --mode mock",
+    "check:i18n": "tsx scripts/check-i18n.ts"
   },
   "dependencies": {
     "@fontsource/jetbrains-mono": "^5.3.0",
@@ -25,6 +26,7 @@
     "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^6.1.0",
     "oxlint": "^1.79.0",
+    "tsx": "^4.23.15",
     "typescript": "~6.0.2",
     "vite": "^8.2.2"
   }

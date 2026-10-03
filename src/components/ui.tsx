@@ -1,4 +1,5 @@
 import { useState, type ButtonHTMLAttributes, type ReactNode } from 'react'
+import { useI18n } from '../i18n/i18nContext'
 
 export function cx(...parts: (string | false | null | undefined)[]) {
   return parts.filter(Boolean).join(' ')
@@ -100,7 +101,8 @@ export function Notice({ tone = 'neutral', title, children }: { tone?: Tone; tit
   )
 }
 
-export function CopyButton({ text, label = 'Copy' }: { text: string; label?: string }) {
+export function CopyButton({ text, label }: { text: string; label?: string }) {
+  const { t } = useI18n()
   const [done, setDone] = useState(false)
   return (
     <Button
@@ -114,7 +116,7 @@ export function CopyButton({ text, label = 'Copy' }: { text: string; label?: str
         }
       }}
     >
-      {done ? 'Copied' : label}
+      {done ? t('Copied') : (label ?? t('Copy'))}
     </Button>
   )
 }
@@ -181,13 +183,4 @@ export function Stat({ label, value, hint }: { label: string; value: ReactNode; 
       {hint && <div className="mt-1 text-xs text-muted">{hint}</div>}
     </div>
   )
-}
-
-export function timeAgo(iso?: string): string {
-  if (!iso) return 'never'
-  const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000)
-  if (s < 60) return 'just now'
-  if (s < 3600) return `${Math.floor(s / 60)} min ago`
-  if (s < 86400) return `${Math.floor(s / 3600)} h ago`
-  return `${Math.floor(s / 86400)} d ago`
 }

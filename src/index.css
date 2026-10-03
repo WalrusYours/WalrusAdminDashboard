@@ -17,12 +17,36 @@
   --color-ok: #5fc48a;
   --color-warn: #e8b04b;
   --color-bad: #ff8a80;
+  --color-syntax-comment: #9a9191;
+  --color-syntax-string: #f4a3ad;
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", Consolas, Menlo, monospace;
 }
 
 :root {
   color-scheme: dark;
+}
+
+/* Light theme: warm paper surfaces, no blue. Same tokens, different values. */
+:root[data-theme='light'] {
+  color-scheme: light;
+  --color-canvas: #f6f3f1;
+  --color-panel: #ffffff;
+  --color-raised: #f1ece9;
+  --color-line: #e4ddd9;
+  --color-line-strong: #cfc6c1;
+  --color-ink: #1f1a18;
+  --color-muted: #675f5b;
+  --color-faint: #7d746f;
+  --color-accent: #e0405a;
+  --color-accent-hover: #c9334b;
+  --color-accent-soft: #fdeaed;
+  --color-accent-ink: #ffffff;
+  --color-ok: #1d8a50;
+  --color-warn: #a3680b;
+  --color-bad: #c0392b;
+  --color-syntax-comment: #7d746f;
+  --color-syntax-string: #c2364c;
 }
 
 /* The bundled font joins characters like <-> and ==; keep them plain. */

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { UNAUTHORIZED_EVENT } from '../api/http'
 import { useApp } from '../context/appContext'
+import { useI18n } from '../i18n/i18nContext'
 import { Logo } from './Logo'
+import { Preferences } from './Preferences'
 import { Button, Notice } from './ui'
 
 type State = 'checking' | 'in' | 'out'
@@ -33,6 +35,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
 function LoginPage({ onSignedIn }: { onSignedIn: () => void }) {
   const { api } = useApp()
+  const { t, msg } = useI18n()
   const [key, setKey] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -46,24 +49,24 @@ function LoginPage({ onSignedIn }: { onSignedIn: () => void }) {
       setKey('')
       onSignedIn()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Sign-in failed.')
+      setError(err instanceof Error ? msg(err.message) : t('Sign-in failed.'))
     } finally {
       setBusy(false)
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-4">
       <form onSubmit={submit} className="w-full max-w-sm space-y-5 rounded-2xl border border-line bg-panel p-7">
         <div className="flex items-center gap-3">
           <Logo size={38} />
           <div className="leading-tight">
             <div className="text-lg font-semibold tracking-tight">WALRUS</div>
-            <div className="text-xs text-faint">Admin dashboard</div>
+            <div className="text-xs text-faint">{t('Admin dashboard')}</div>
           </div>
         </div>
         <label className="block">
-          <span className="mb-1.5 block text-xs uppercase tracking-wider text-faint">Admin key</span>
+          <span className="mb-1.5 block text-xs uppercase tracking-wider text-faint">{t('Admin key')}</span>
           <input
             type="password"
             autoFocus
@@ -76,12 +79,13 @@ function LoginPage({ onSignedIn }: { onSignedIn: () => void }) {
         </label>
         {error && <Notice tone="bad">{error}</Notice>}
         <Button type="submit" variant="primary" className="w-full" disabled={busy || !key}>
-          {busy ? 'Signing in…' : 'Sign in'}
+          {busy ? t('Signing in…') : t('Sign in')}
         </Button>
         <p className="text-xs text-faint">
-          The key is set in the engine's environment. It is exchanged for a short-lived session cookie and is not stored in the browser.
+          {t("The key is set in the engine's environment. It is exchanged for a short-lived session cookie and is not stored in the browser.")}
         </p>
       </form>
+      <Preferences />
     </div>
   )
 }

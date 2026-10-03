@@ -63,6 +63,19 @@ WALRUS engine and cannot be pointed elsewhere from the browser:
 - The engine's `/v1/health` returns `instance_id` and `instance_name`; the sidebar shows
   "Managing engine" so the operator can see which engine this is.
 
+## Languages and themes
+
+- **Languages:** English, Russian and Romanian. The switcher is in the sidebar and on the
+  sign-in screen; the first visit follows the browser language. Strings are keyed by their
+  English text (`t('Upload YAML')`), so anything untranslated falls back to English.
+  Dictionaries are in `src/i18n/ru.ts` and `ro.ts`; plurals use the browser's
+  `Intl.PluralRules` (Russian has one/few/many forms, Romanian one/few/other).
+  `npm run check:i18n` fails if a string used in the UI is missing from ru or ro, a plural
+  form is missing, or a translation changes the `{placeholders}`.
+  Validation messages produced by the schema validator and the engine stay in English.
+- **Themes:** dark (default), light, or follow the system. Colours are CSS variables in
+  `src/index.css`; the light palette overrides them under `[data-theme='light']`.
+
 ## Security note
 
 This is an operator tool. With a live engine the operator signs in with the admin key and

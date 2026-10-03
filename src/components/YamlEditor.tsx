@@ -12,7 +12,7 @@ function highlightValue(src: string): ReactNode[] {
     if (m.index > last) out.push(src.slice(last, m.index))
     const t = m[0]
     const cls = /^["']/.test(t)
-      ? 'text-[#f4a3ad]'
+      ? 'text-syntax-string'
       : /^[{}[\],]$/.test(t)
         ? 'text-faint'
         : 'text-warn'
@@ -28,7 +28,7 @@ function highlightValue(src: string): ReactNode[] {
 }
 
 function highlightLine(line: string): ReactNode {
-  if (/^\s*#/.test(line)) return <span className="text-[#9a9191]">{line}</span>
+  if (/^\s*#/.test(line)) return <span className="text-syntax-comment">{line}</span>
   const m = line.match(/^(\s*(?:-\s+)?)([^\s:#{}[\],"'][^:#]*?)(:)(\s.*|$)/)
   if (!m) return highlightValue(line)
   const [, indent, key, colon, rest] = m
@@ -41,7 +41,7 @@ function highlightLine(line: string): ReactNode {
       <span className="text-ink">{key}</span>
       <span className="text-faint">{colon}</span>
       {highlightValue(value)}
-      {comment && <span className="text-[#9a9191]">{comment}</span>}
+      {comment && <span className="text-syntax-comment">{comment}</span>}
     </>
   )
 }
