@@ -12,6 +12,7 @@ import {
   setInteractionField,
   setKnobMap,
   setSignalDefault,
+  setLocked,
   setSimilarityWeight,
 } from '../lib/schema'
 import { Badge, Button, Slider, cx } from './ui'
@@ -285,6 +286,7 @@ function DataView({ yaml, edit }: { yaml: string; edit: Edit }) {
                   <text textAnchor="middle" y={4} fontSize={11} fill="#efeaea" className="font-mono">
                     {isRef ? e.name : `${e.name} ${fmt(w)}`}
                   </text>
+                  {e.locked && <Padlock x={e.name.length * 3.4 + 28} y={-6} />}
                 </g>
               </g>
             )
@@ -371,7 +373,10 @@ function WeightRow({
       className={cx('cursor-pointer rounded-lg border px-3 py-2 text-xs transition-colors', active ? 'border-accent/60 bg-raised' : 'border-line hover:border-line-strong')}
     >
       <div className="flex items-baseline justify-between gap-2">
-        <span className="font-mono text-ink">{edge.name}</span>
+        <span className="flex items-center gap-1.5 font-mono text-ink">
+          {edge.name}
+          {edge.locked && <LockIcon />}
+        </span>
         <span className="font-mono" style={{ color: w >= 0 ? POS : NEG }}>
           {fmt(w)}
         </span>
@@ -402,59 +407,88 @@ function Panel({ title, onClose, children }: { title: ReactNode; onClose: () => 
   )
 }
 
-function NumberField({ value, onChange, step = 0.5, label }: { value: number; onChange: (v: number) => void; step?: number; label: string }) {
+function NumberField({
+  value,
+  onChange,
+  step = 0.5,
+  label,
+  disabled,
+}: {
+  value: number
+  onChange: (v: number) => void
+  step?: number
+  label: string
+  disabled?: boolean
+}) {
   return (
     <input
       type="number"
       step={step}
       value={value}
+      disabled={disabled}
       aria-label={label}
       onChange={(e) => onChange(Number(e.target.value) || 0)}
-      className="w-20 rounded-md border border-line-strong bg-canvas px-2 py-1 text-right font-mono text-sm"
+      className="w-20 rounded-md border border-line-strong bg-canvas px-2 py-1 text-right font-mono text-sm disabled:cursor-not-allowed disabled:opacity-40"
     />
   )
 }
 
 function InteractionEditor({ edge, edit, onDone }: { edge: DataEdge; edit: Edit; onDone: () => void }) {
   const weight = edge.weight ?? 0
+  const locked = edge.locked === true
   const [halfLife, setHalfLife] = useState(edge.halfLife ?? '')
   const validHalfLife = halfLife === '' || HALF_LIFE.test(halfLife)
   const range = Math.max(10, Math.ceil(Math.abs(weight)))
+  const setWeight = (v: number) => edit((t) => setInteractionField(t, edge.name, 'weight', v))
 
   return (
-    <Panel title={<span className="font-mono">{edge.name}</span>} onClose={onDone}>
+    <Panel
+      title={
+        <span className="flex items-center gap-2 font-mono">
+          {edge.name}
+          {locked && <LockIcon />}
+        </span>
+      }
+      onClose={onDone}
+    >
       <div className="space-y-4">
+        {locked && <LockedNote />}
         <div>
           <div className="mb-1.5 flex items-center justify-between text-xs text-muted">
             <span>Weight</span>
-            <NumberField label={`${edge.name} weight`} value={weight} onChange={(v) => edit((t) => setInteractionField(t, edge.name, 'weight', v))} />
+            <NumberField disabled={locked} label={`${edge.name} weight`} value={weight} onChange={setWeight} />
           </div>
-          <Slider min={-range} max={range} step={0.5} value={weight} label={`${edge.name} weight slider`} onChange={(v) => edit((t) => setInteractionField(t, edge.name, 'weight', v))} />
+          <Slider disabled={locked} min={-range} max={range} step={0.5} value={weight} label={`${edge.name} weight slider`} onChange={setWeight} />
           <p className="mt-1.5 text-xs text-faint">Negative weights push similar items down.</p>
         </div>
         <label className="block text-xs text-muted">
           Half-life
           <input
             value={halfLife}
+            disabled={locked}
             placeholder="e.g. 30d (blank = no decay)"
             onChange={(e) => {
               setHalfLife(e.target.value)
               if (e.target.value === '' || HALF_LIFE.test(e.target.value)) edit((t) => setInteractionField(t, edge.name, 'half_life', e.target.value))
             }}
-            className={cx('mt-1.5 w-full rounded-md border bg-canvas px-2.5 py-1.5 font-mono text-sm', validHalfLife ? 'border-line-strong' : 'border-bad')}
+            className={cx('mt-1.5 w-full rounded-md border bg-canvas px-2.5 py-1.5 font-mono text-sm disabled:cursor-not-allowed disabled:opacity-40', validHalfLife ? 'border-line-strong' : 'border-bad')}
           />
           {!validHalfLife && <span className="mt-1 block text-bad">Use a number and s, m, h, d or w, for example 3d.</span>}
         </label>
-        <Button
-          variant="danger"
-          className="w-full"
-          onClick={() => {
-            edit((t) => removeInteraction(t, edge.name))
-            onDone()
-          }}
-        >
-          Remove interaction
-        </Button>
+        <div className="flex gap-2">
+          <LockToggle locked={locked} onToggle={() => edit((t) => setLocked(t, { kind: 'interaction', id: edge.name }, !locked))} />
+          <Button
+            variant="danger"
+            className="flex-1"
+            disabled={locked}
+            onClick={() => {
+              edit((t) => removeInteraction(t, edge.name))
+              onDone()
+            }}
+          >
+            Remove
+          </Button>
+        </div>
       </div>
     </Panel>
   )
@@ -477,20 +511,32 @@ function NodeEditor({ node, edit, onClose }: { node: DataNode; edit: Edit; onClo
           {node.similarity.map((t, i) => (
             <li key={i} className="text-xs">
               <div className="flex items-center justify-between gap-2">
-                <span className="font-mono text-ink">{t.on}</span>
+                <span className="flex items-center gap-1.5 font-mono text-ink">
+                  {t.on}
+                  {t.locked && <LockIcon />}
+                </span>
                 <span className="flex items-center gap-2">
                   <span className="font-mono text-muted">{t.metric}</span>
-                  <button className="text-faint hover:text-bad" title="Remove this term" onClick={() => edit((x) => removeSimilarityTerm(x, node.id, i))}>
-                    ✕
+                  <button
+                    className="text-faint hover:text-warn"
+                    title={t.locked ? 'Unlock this term' : 'Lock this term'}
+                    onClick={() => edit((x) => setLocked(x, { kind: 'similarity', entity: node.id, index: i }, !t.locked))}
+                  >
+                    {t.locked ? 'unlock' : 'lock'}
                   </button>
+                  {!t.locked && (
+                    <button className="text-faint hover:text-bad" title="Remove this term" onClick={() => edit((x) => removeSimilarityTerm(x, node.id, i))}>
+                      ✕
+                    </button>
+                  )}
                 </span>
               </div>
               {!t.on.startsWith('via ') && (
                 <div className="mt-1.5 flex items-center gap-3">
                   <div className="flex-1">
-                    <Slider min={0} max={1} step={0.05} value={t.weight} label={`${t.on} weight`} onChange={(v) => edit((x) => setSimilarityWeight(x, node.id, i, v))} />
+                    <Slider disabled={t.locked} min={0} max={1} step={0.05} value={t.weight} label={`${t.on} weight`} onChange={(v) => edit((x) => setSimilarityWeight(x, node.id, i, v))} />
                   </div>
-                  <NumberField label={`${t.on} weight value`} step={0.05} value={t.weight} onChange={(v) => edit((x) => setSimilarityWeight(x, node.id, i, v))} />
+                  <NumberField disabled={t.locked} label={`${t.on} weight value`} step={0.05} value={t.weight} onChange={(v) => edit((x) => setSimilarityWeight(x, node.id, i, v))} />
                 </div>
               )}
             </li>
@@ -609,6 +655,7 @@ function ScoringView({ yaml, edit }: { yaml: string; edit: Edit }) {
               <text x={12} y={32} fontSize={10} fill="#a39b9b">
                 {trunc(k.label.replace(/\s*<->\s*/, '  ↔  '), 40)}
               </text>
+              {k.locked && <Padlock x={210} y={4} />}
             </g>
           ))}
 
@@ -623,6 +670,7 @@ function ScoringView({ yaml, edit }: { yaml: string; edit: Edit }) {
                 <text x={178} y={16} fontSize={11} textAnchor="end" fill={POS} className="font-mono">
                   {s.default}
                 </text>
+                {s.locked && <Padlock x={138} y={4} />}
                 <rect x={12} y={26} width={166} height={5} rx={2.5} fill="#0a0909" />
                 <rect x={12} y={26} width={Math.max(2, (s.default / maxDefault) * 166)} height={5} rx={2.5} fill={POS} />
               </g>
@@ -657,17 +705,21 @@ function ScoringView({ yaml, edit }: { yaml: string; edit: Edit }) {
       <aside className="space-y-5">
         {selSignal && (
           <Panel title={<span className="font-mono">{selSignal.id}</span>} onClose={() => setSel(null)}>
-            <SignalSlider id={selSignal.id} value={selSignal.default} edit={edit} />
+            {selSignal.locked && <LockedNote />}
+            <SignalSlider id={selSignal.id} value={selSignal.default} locked={selSignal.locked} edit={edit} />
             <p className="mt-2 text-xs text-faint">type {selSignal.type}</p>
+            <div className="mt-3">
+              <LockToggle locked={selSignal.locked} onToggle={() => edit((t) => setLocked(t, { kind: 'signal', id: selSignal.id }, !selSignal.locked))} />
+            </div>
           </Panel>
         )}
-        {selLink && <ExprEditor key={`${selLink.knob}->${selLink.target}`} link={selLink} knob={g.knobs.find((k) => k.id === selLink.knob)} edit={edit} onClose={() => setSel(null)} />}
+        {selLink && <ExprEditor key={`${selLink.knob}->${selLink.target}`} link={selLink} knob={g.knobs.find((k) => k.id === selLink.knob)} locked={selLink.locked} edit={edit} onClose={() => setSel(null)} />}
         <div>
           <div className="mb-2 text-xs uppercase tracking-wider text-faint">Signal default weights</div>
           <ul className="space-y-3">
             {g.signals.map((s) => (
               <li key={s.id} className={cx('rounded-lg border px-3 py-2', sel?.kind === 'signal' && sel.id === s.id ? 'border-accent/60' : 'border-line')}>
-                <SignalSlider id={s.id} value={s.default} edit={edit} compact />
+                <SignalSlider id={s.id} value={s.default} locked={s.locked} edit={edit} compact />
               </li>
             ))}
           </ul>
@@ -677,15 +729,19 @@ function ScoringView({ yaml, edit }: { yaml: string; edit: Edit }) {
   )
 }
 
-function SignalSlider({ id, value, edit, compact }: { id: string; value: number; edit: Edit; compact?: boolean }) {
+function SignalSlider({ id, value, edit, compact, locked }: { id: string; value: number; edit: Edit; compact?: boolean; locked?: boolean }) {
   const max = Math.max(1, Math.ceil(value))
+  const set = (v: number) => edit((t) => setSignalDefault(t, id, v))
   return (
     <div>
       <div className="mb-1.5 flex items-center justify-between gap-2 text-xs">
-        <span className="font-mono text-ink">{compact ? id : 'Default weight'}</span>
-        <NumberField label={`${id} default`} step={0.05} value={value} onChange={(v) => edit((t) => setSignalDefault(t, id, v))} />
+        <span className="flex items-center gap-1.5 font-mono text-ink">
+          {compact ? id : 'Default weight'}
+          {locked && <LockIcon />}
+        </span>
+        <NumberField disabled={locked} label={`${id} default`} step={0.05} value={value} onChange={set} />
       </div>
-      <Slider min={0} max={max} step={0.05} value={value} label={`${id} default slider`} onChange={(v) => edit((t) => setSignalDefault(t, id, v))} />
+      <Slider disabled={locked} min={0} max={max} step={0.05} value={value} label={`${id} default slider`} onChange={set} />
     </div>
   )
 }
@@ -693,11 +749,13 @@ function SignalSlider({ id, value, edit, compact }: { id: string; value: number;
 function ExprEditor({
   link,
   knob,
+  locked,
   edit,
   onClose,
 }: {
   link: { knob: string; target: string; expr: string }
   knob?: { range: [number, number] }
+  locked?: boolean
   edit: Edit
   onClose: () => void
 }) {
@@ -715,16 +773,19 @@ function ExprEditor({
   return (
     <Panel
       title={
-        <span className="font-mono text-xs">
+        <span className="flex items-center gap-2 font-mono text-xs">
           {link.knob} → {link.target}
+          {locked && <LockIcon />}
         </span>
       }
       onClose={onClose}
     >
+      {locked && <LockedNote what="knob" />}
       <label className="block text-xs text-muted">
         Expression in x
         <input
           value={src}
+          disabled={locked}
           spellCheck={false}
           onChange={(e) => {
             setSrc(e.target.value)
@@ -735,7 +796,7 @@ function ExprEditor({
               /* not applied until it compiles */
             }
           }}
-          className={cx('mt-1.5 w-full rounded-md border bg-canvas px-2.5 py-1.5 font-mono text-sm', compiled.error ? 'border-bad' : 'border-line-strong')}
+          className={cx('mt-1.5 w-full rounded-md border bg-canvas px-2.5 py-1.5 font-mono text-sm disabled:cursor-not-allowed disabled:opacity-40', compiled.error ? 'border-bad' : 'border-line-strong')}
         />
       </label>
       {compiled.error ? (
@@ -751,6 +812,47 @@ function ExprEditor({
         </div>
       )}
       <p className="mt-3 text-xs text-faint">Functions: lerp, min, max. Example: 1 - x, lerp(0.2, 4, x), 0.3 + 0.5 * x.</p>
+      <div className="mt-3">
+        <LockToggle what="knob" locked={!!locked} onToggle={() => edit((t) => setLocked(t, { kind: 'knob', id: link.knob }, !locked))} />
+      </div>
     </Panel>
+  )
+}
+
+// ----------------------------------------------------------------- locks
+
+function Padlock({ x, y }: { x: number; y: number }) {
+  return (
+    <g transform={`translate(${x} ${y})`}>
+      <title>locked</title>
+      <rect x={0} y={5} width={10} height={7} rx={1.5} fill={NEG} />
+      <path d="M2 5V3.5a3 3 0 0 1 6 0V5" fill="none" stroke={NEG} strokeWidth={1.4} />
+    </g>
+  )
+}
+
+function LockIcon() {
+  return (
+    <svg width="10" height="13" viewBox="0 0 10 13" aria-label="locked" role="img">
+      <title>locked</title>
+      <rect x={0} y={5} width={10} height={7.5} rx={1.5} fill={NEG} />
+      <path d="M2 5V3.5a3 3 0 0 1 6 0V5" fill="none" stroke={NEG} strokeWidth={1.4} />
+    </svg>
+  )
+}
+
+function LockedNote({ what = 'item' }: { what?: string }) {
+  return (
+    <p className="mb-3 rounded-lg border border-warn/30 bg-canvas px-3 py-2 text-xs text-warn">
+      This {what} is locked, so editing is disabled here. Unlock it to change it.
+    </p>
+  )
+}
+
+function LockToggle({ locked, onToggle, what = '' }: { locked: boolean; onToggle: () => void; what?: string }) {
+  return (
+    <Button onClick={onToggle}>
+      {locked ? 'Unlock' : 'Lock'} {what}
+    </Button>
   )
 }

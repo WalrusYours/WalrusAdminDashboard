@@ -7,6 +7,7 @@ export interface SimTerm {
   on: string
   metric: string
   weight: number
+  locked: boolean
 }
 
 export interface DataNode {
@@ -27,6 +28,7 @@ export interface DataEdge {
   weight?: number
   halfLife?: string
   value?: string
+  locked?: boolean
 }
 
 export interface DataGraph {
@@ -61,6 +63,7 @@ export function dataGraph(text: string): DataGraph {
         on: Array.isArray(t.on) ? t.on.join(' + ') : String(t.on ?? `via ${t.via ?? '?'}`),
         metric: String(t.metric ?? '?'),
         weight: typeof t.weight === 'number' ? t.weight : 0,
+        locked: t.locked === true,
       })),
     }
   })
@@ -80,6 +83,7 @@ export function dataGraph(text: string): DataGraph {
         weight: spec.weight,
         halfLife: spec.half_life === undefined ? undefined : String(spec.half_life),
         value: typeof spec.value === 'string' ? spec.value : undefined,
+        locked: spec.locked === true,
       })
     }
   }
@@ -94,10 +98,10 @@ export function dataGraph(text: string): DataGraph {
 }
 
 export interface ScoringGraph {
-  knobs: { id: string; label: string; range: [number, number] }[]
-  signals: { id: string; type: string; default: number }[]
+  knobs: { id: string; label: string; range: [number, number]; locked: boolean }[]
+  signals: { id: string; type: string; default: number; locked: boolean }[]
   meta: string[]
-  links: { knob: string; target: string; expr: string; isMeta: boolean }[]
+  links: { knob: string; target: string; expr: string; isMeta: boolean; locked: boolean }[]
 }
 
 export function scoringGraph(text: string): ScoringGraph {
@@ -109,6 +113,7 @@ export function scoringGraph(text: string): ScoringGraph {
     id,
     type: isObj(s) ? String(s.type ?? '?') : '?',
     default: isObj(s) && typeof s.default === 'number' ? s.default : 0,
+    locked: isObj(s) && s.locked === true,
   }))
   const meta = new Set<string>()
   for (const k of Array.isArray(value.knobs) ? value.knobs : []) {
@@ -117,11 +122,12 @@ export function scoringGraph(text: string): ScoringGraph {
       id: k.id,
       label: String(k.label ?? k.id),
       range: Array.isArray(k.range) ? [Number(k.range[0]), Number(k.range[1])] : [0, 1],
+      locked: k.locked === true,
     })
     for (const [target, expr] of Object.entries(isObj(k.maps) ? k.maps : {})) {
       const isMeta = !(target in signals)
       if (isMeta) meta.add(target)
-      out.links.push({ knob: k.id, target, expr: String(expr), isMeta })
+      out.links.push({ knob: k.id, target, expr: String(expr), isMeta, locked: k.locked === true })
     }
   }
   out.meta = [...meta]

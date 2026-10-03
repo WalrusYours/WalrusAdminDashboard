@@ -127,6 +127,7 @@ export function Slider({
   onChange,
   label,
   marker,
+  disabled,
 }: {
   value: number
   min: number
@@ -136,6 +137,7 @@ export function Slider({
   label: string
   /** optional tick (same units as value), e.g. the schema default */
   marker?: number
+  disabled?: boolean
 }) {
   const pct = (v: number) => `${Math.min(100, Math.max(0, ((v - min) / (max - min)) * 100))}%`
   return (
@@ -148,7 +150,8 @@ export function Slider({
         value={value}
         aria-label={label}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="block w-full"
+        disabled={disabled}
+        className={cx('block w-full', disabled && 'cursor-not-allowed opacity-40')}
         style={{ ['--fill' as string]: pct(value) }}
       />
       {marker !== undefined && (

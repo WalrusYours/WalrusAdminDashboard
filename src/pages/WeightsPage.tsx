@@ -7,6 +7,7 @@ import {
   deletePreset,
   diffSchemas,
   resolveWeights,
+  setLocked,
   setPreset,
   setSignalDefault,
   summarize,
@@ -87,17 +88,26 @@ export function WeightsPage() {
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">{s.id}</span>
                     <Badge>{s.type}</Badge>
+                    {s.locked && <Badge tone="warn">locked</Badge>}
+                    <button
+                      className="text-xs text-faint hover:text-warn"
+                      onClick={() => setText(setLocked(text, { kind: 'signal', id: s.id }, !s.locked))}
+                    >
+                      {s.locked ? 'unlock' : 'lock'}
+                    </button>
                   </div>
                   <input
                     type="number"
                     step="0.05"
                     value={s.default}
+                    disabled={s.locked}
                     onChange={(e) => setText(setSignalDefault(text, s.id, Number(e.target.value) || 0))}
                     className="w-20 rounded-md border border-line-strong bg-raised px-2 py-1 text-right font-mono text-sm"
                     aria-label={`${s.id} default weight`}
                   />
                 </div>
                 <Slider
+                  disabled={s.locked}
                   min={0}
                   max={Math.max(1, Math.ceil(s.default))}
                   step={0.05}

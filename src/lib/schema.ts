@@ -27,6 +27,7 @@ export interface SignalInfo {
   id: string
   type: string
   default: number
+  locked: boolean
   params: Obj
 }
 export interface KnobInfo {
@@ -189,8 +190,8 @@ export function summarize(text: string): SchemaSummary | null {
     interactions: Object.keys(isObj(value.interactions) ? value.interactions : {}),
     signals: Object.entries(signals).map(([id, s]) => {
       const o = isObj(s) ? s : {}
-      const { type, default: d, ...params } = o
-      return { id, type: String(type ?? '?'), default: typeof d === 'number' ? d : 0, params }
+      const { type, default: d, locked, ...params } = o
+      return { id, type: String(type ?? '?'), default: typeof d === 'number' ? d : 0, locked: locked === true, params }
     }),
     knobs: knobs.filter(isObj).map((k) => ({
       id: String(k.id),
@@ -376,5 +377,30 @@ export function setKnobMap(text: string, knobId: string, target: string, expr: s
   const index = knobs.items.findIndex((k) => (k as YAMLMap).get('id') === knobId)
   if (index < 0) return text
   doc.setIn(['knobs', index, 'maps', target], expr)
+  return doc.toString()
+}
+
+// ---------- locked items ----------
+// A lock only guards the editors against accidental edits; it can be toggled freely.
+
+export type LockTarget =
+  | { kind: 'interaction' | 'signal' | 'knob'; id: string }
+  | { kind: 'similarity'; entity: string; index: number }
+
+export function setLocked(text: string, target: LockTarget, locked: boolean): string {
+  const doc = parseDocument(text)
+  let path: (string | number)[]
+  if (target.kind === 'interaction') path = ['interactions', target.id]
+  else if (target.kind === 'signal') path = ['signals', target.id]
+  else if (target.kind === 'similarity') path = ['similarity', target.entity, target.index]
+  else {
+    const knobs = doc.get('knobs')
+    if (!isSeq(knobs)) return text
+    const index = knobs.items.findIndex((k) => (k as YAMLMap).get('id') === target.id)
+    if (index < 0) return text
+    path = ['knobs', index]
+  }
+  if (locked) doc.setIn([...path, 'locked'], true)
+  else doc.deleteIn([...path, 'locked'])
   return doc.toString()
 }
