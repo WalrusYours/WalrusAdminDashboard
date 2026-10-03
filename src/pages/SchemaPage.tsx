@@ -1,21 +1,20 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from 'react'
-import type { SchemaResult, SchemaVersion, Verdict } from '../api/types'
+import { useCallback, useEffect, useRef, useState, type DragEvent } from 'react'
+import type { SchemaVersion, Verdict } from '../api/types'
 import { Badge, Button, Card, Empty, Notice, PageHeader, cx, timeAgo } from '../components/ui'
+import { GraphDialog } from '../components/SchemaGraph'
 import { YamlEditor } from '../components/YamlEditor'
 import { useApp } from '../context/appContext'
 import { useDraft } from '../context/draftContext'
-import { diffSchemas, validateSchema } from '../lib/schema'
+import { usePublish } from '../context/usePublish'
 
 const VERDICT_TONE: Record<Verdict, 'neutral' | 'ok' | 'warn'> = { none: 'neutral', additive: 'ok', breaking: 'warn' }
 
 export function SchemaPage() {
   const { api } = useApp()
-  const { active, text, setText, dirty, discard, refresh } = useDraft()
+  const { active, text, setText, dirty, discard } = useDraft()
   const [history, setHistory] = useState<SchemaVersion[]>([])
-  const [result, setResult] = useState<SchemaResult | null>(null)
-  const [busy, setBusy] = useState(false)
-  const [confirm, setConfirm] = useState(false)
   const [dragging, setDragging] = useState(false)
+  const [showGraph, setShowGraph] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const loadHistory = useCallback(async () => setHistory(await api.schemaHistory()), [api])
@@ -23,18 +22,11 @@ export function SchemaPage() {
     void loadHistory()
   }, [loadHistory, active?.version])
 
-  const errors = useMemo(() => (text.trim() ? validateSchema(text) : []), [text])
-  const diff = useMemo(() => (text.trim() ? diffSchemas(active?.yaml ?? null, text) : null), [text, active])
-
-  // a previous server result no longer describes the edited text
-  useEffect(() => {
-    setResult(null)
-    setConfirm(false)
-  }, [text])
+  const { errors, diff, result, busy, confirm, setConfirm, needsConfirm, canApply, run } = usePublish(loadHistory)
 
   async function readFile(file: File | undefined) {
     if (!file) return
-    setText(await file.text())
+    setText((await file.text()).replace(/^﻿/, '').replace(/\r\n?/g, '\n'))
   }
 
   function onDrop(e: DragEvent) {
@@ -42,23 +34,6 @@ export function SchemaPage() {
     setDragging(false)
     void readFile(e.dataTransfer.files[0])
   }
-
-  async function run(dryRun: boolean) {
-    setBusy(true)
-    try {
-      const r = await api.putSchema(text, { dryRun, confirmBreaking: confirm })
-      setResult(r)
-      if (!dryRun && r.ok) {
-        await refresh()
-        await loadHistory()
-      }
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const needsConfirm = diff?.verdict === 'breaking' && !!active
-  const canApply = !!text.trim() && errors.length === 0 && (dirty || !active) && (!needsConfirm || confirm)
 
   return (
     <>
@@ -75,6 +50,9 @@ export function SchemaPage() {
               onChange={(e) => void readFile(e.target.files?.[0])}
             />
             <Button onClick={() => fileRef.current?.click()}>Upload YAML</Button>
+            <Button disabled={!text.trim()} onClick={() => setShowGraph(true)}>
+              View graph
+            </Button>
             <Button variant="ghost" disabled={!dirty} onClick={discard}>
               Discard changes
             </Button>
@@ -122,6 +100,19 @@ export function SchemaPage() {
                 <Notice tone="bad" title={`${errors.length} problem${errors.length > 1 ? 's' : ''}`} />
                 <ul className="max-h-64 space-y-2 overflow-y-auto text-sm">
                   {errors.map((e, i) => (
+                    <li key={i} className="rounded-lg border border-line bg-raised px-3 py-2">
+                      {e.path && <div className="font-mono text-xs text-accent">{e.path}</div>}
+                      <div className="text-muted">{e.message}</div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {result && result.errors.length > 0 && (
+              <div className="mt-4 space-y-2">
+                <Notice tone="bad" title={`Engine: ${result.errors.length} problem${result.errors.length > 1 ? 's' : ''}`} />
+                <ul className="max-h-64 space-y-2 overflow-y-auto text-sm">
+                  {result.errors.map((e, i) => (
                     <li key={i} className="rounded-lg border border-line bg-raised px-3 py-2">
                       {e.path && <div className="font-mono text-xs text-accent">{e.path}</div>}
                       <div className="text-muted">{e.message}</div>
@@ -178,6 +169,8 @@ export function SchemaPage() {
           </Card>
         </div>
       </div>
+
+      {showGraph && <GraphDialog onClose={() => setShowGraph(false)} />}
 
       <Card title="Version history" className="mt-6">
         {history.length === 0 ? (

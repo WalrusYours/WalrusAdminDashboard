@@ -6,19 +6,30 @@ and knobs, manage tenants and API keys, watch the precompute job.
 React 19, Vite, Tailwind 4, TypeScript. Dark theme on warm near-black surfaces with the
 coral accent of the WALRUS logo.
 
-> **Runs on a mock for now.** `src/api/mock.ts` is an in-browser stand-in for the WALRUS
-> admin API (state in `localStorage`, "Reset demo data" in the sidebar). It uses the same
-> validation and diff logic the server will. A live client only needs to implement the
+> **Live by default, mock on request.** The dashboard talks to a real WALRUS engine through
+> `src/api/http.ts`. Today the engine implements health, sign-in and the schema endpoints
+> (validate, dry run, apply, breaking-change confirmation, history); jobs, tenants and keys
+> are not built yet, so those pages are disabled in live mode. `npm run dev:mock` runs the
+> whole UI against an in-browser mock (`src/api/mock.ts`) instead. Both implement the
 > `WalrusApi` interface in `src/api/types.ts`.
 
 ## Run
 
 ```
 npm install
-npm run dev        # http://localhost:5174
+npm run dev        # live: http://localhost:5174, proxies /api to the engine
+npm run dev:mock   # no engine needed
 npm run build
 npm run lint
 ```
+
+For live mode start an engine first (from `walrus/`):
+
+```
+WALRUS_ADMIN_KEY=choose-a-key go run ./cmd/walrus      # listens on :8080
+```
+
+Then sign in with that key. Set `WALRUS_URL` if the engine is not on http://localhost:8080.
 
 With Docker (from the repo root): `docker compose --profile demo up --build dashboard`,
 then open http://localhost:3001.

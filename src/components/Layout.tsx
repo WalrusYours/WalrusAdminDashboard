@@ -79,17 +79,31 @@ export function Layout() {
               <div className="font-mono text-faint">{health.instance_id?.slice(0, 12)}</div>
             </div>
           )}
-          <Badge tone="warn">mock data</Badge>
-          <p className="text-xs text-faint">Running against an in-browser mock of the WALRUS API.</p>
-          <button
-            className="w-fit text-xs text-muted underline-offset-2 hover:text-ink hover:underline"
-            onClick={() => {
-              resetMock()
-              location.reload()
-            }}
-          >
-            Reset demo data
-          </button>
+          {api.mode === 'mock' ? (
+            <>
+              <Badge tone="warn">mock data</Badge>
+              <p className="text-xs text-faint">Running against an in-browser mock of the WALRUS API.</p>
+              <button
+                className="w-fit text-xs text-muted underline-offset-2 hover:text-ink hover:underline"
+                onClick={() => {
+                  resetMock()
+                  location.reload()
+                }}
+              >
+                Reset demo data
+              </button>
+            </>
+          ) : (
+            <>
+              <Badge tone="ok">live</Badge>
+              <button
+                className="w-fit text-xs text-muted underline-offset-2 hover:text-ink hover:underline"
+                onClick={() => void api.logout().then(() => location.reload())}
+              >
+                Sign out
+              </button>
+            </>
+          )}
         </div>
       </aside>
 

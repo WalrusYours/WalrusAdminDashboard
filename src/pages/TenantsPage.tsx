@@ -57,6 +57,15 @@ export function TenantsPage() {
         subtitle="Each tenant has its own schema, data and API keys. A key identifies its tenant and carries scopes; the secret is shown once."
       />
 
+      {api.mode === 'live' && (
+        <div className="mb-6">
+          <Notice tone="warn" title="Not available on this engine yet">
+            The engine runs as a single default tenant for now. Creating tenants and issuing or revoking keys arrives with the key
+            system; use <span className="font-mono">npm run dev:mock</span> to preview this page.
+          </Notice>
+        </div>
+      )}
+
       <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
         <div className="space-y-6">
           <Card title="Tenants">
@@ -82,7 +91,7 @@ export function TenantsPage() {
                 placeholder="new tenant name"
                 className="min-w-0 flex-1 rounded-lg border border-line-strong bg-raised px-3 py-2 text-sm placeholder:text-faint"
               />
-              <Button type="submit" variant="primary" disabled={!name.trim()}>
+              <Button type="submit" variant="primary" disabled={!name.trim() || api.mode === 'live'}>
                 Create
               </Button>
             </form>
@@ -119,7 +128,7 @@ export function TenantsPage() {
                     </option>
                   ))}
                 </select>
-                <Button type="submit" variant="primary" disabled={scopes.length === 0}>
+                <Button type="submit" variant="primary" disabled={scopes.length === 0 || api.mode === 'live'}>
                   Issue key
                 </Button>
               </div>

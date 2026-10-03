@@ -1,4 +1,5 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { AuthGate } from './components/AuthGate'
 import { Layout } from './components/Layout'
 import { AppProvider } from './context/AppProvider'
 import { DraftProvider } from './context/DraftProvider'
@@ -11,6 +12,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AppProvider>
+        <AuthGate>
         <DraftProvider>
           <Routes>
             <Route element={<Layout />}>
@@ -22,6 +24,7 @@ export default function App() {
             </Route>
           </Routes>
         </DraftProvider>
+        </AuthGate>
       </AppProvider>
     </BrowserRouter>
   )

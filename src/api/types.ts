@@ -87,7 +87,11 @@ export interface PutSchemaOptions {
 }
 
 export interface WalrusApi {
-  readonly mode: 'mock'
+  readonly mode: 'mock' | 'live'
+  /** true when the browser already holds a valid session */
+  session(): Promise<boolean>
+  login(key: string): Promise<void>
+  logout(): Promise<void>
   health(): Promise<Health>
   getSchema(): Promise<ActiveSchema | null>
   schemaHistory(): Promise<SchemaVersion[]>

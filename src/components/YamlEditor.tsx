@@ -28,7 +28,7 @@ function highlightValue(src: string): ReactNode[] {
 }
 
 function highlightLine(line: string): ReactNode {
-  if (/^\s*#/.test(line)) return <span className="text-faint italic">{line}</span>
+  if (/^\s*#/.test(line)) return <span className="text-[#9a9191]">{line}</span>
   const m = line.match(/^(\s*(?:-\s+)?)([^\s:#{}[\],"'][^:#]*?)(:)(\s.*|$)/)
   if (!m) return highlightValue(line)
   const [, indent, key, colon, rest] = m
@@ -41,7 +41,7 @@ function highlightLine(line: string): ReactNode {
       <span className="text-ink">{key}</span>
       <span className="text-faint">{colon}</span>
       {highlightValue(value)}
-      {comment && <span className="text-faint italic">{comment}</span>}
+      {comment && <span className="text-[#9a9191]">{comment}</span>}
     </>
   )
 }
@@ -58,7 +58,7 @@ export function YamlEditor({
 }) {
   const codeRef = useRef<HTMLPreElement>(null)
   const gutterRef = useRef<HTMLDivElement>(null)
-  const lines = useMemo(() => value.split('\n'), [value])
+  const lines = useMemo(() => value.split(/\r\n|\r|\n/), [value])
 
   function sync(e: React.UIEvent<HTMLTextAreaElement>) {
     const { scrollTop, scrollLeft } = e.currentTarget
@@ -66,7 +66,14 @@ export function YamlEditor({
     if (gutterRef.current) gutterRef.current.style.transform = `translateY(${-scrollTop}px)`
   }
 
-  const shared = { fontSize: 13, lineHeight: `${LINE}px`, padding: '16px 16px 16px 60px' } as const
+  const shared = {
+    fontSize: 13,
+    lineHeight: `${LINE}px`,
+    padding: '16px 16px 16px 60px',
+    fontVariantLigatures: 'none',
+    fontFeatureSettings: '"liga" 0, "calt" 0',
+    tabSize: 2,
+  } as const
 
   return (
     <div className="relative h-[34rem] overflow-hidden rounded-lg border border-line-strong bg-canvas font-mono focus-within:border-faint">

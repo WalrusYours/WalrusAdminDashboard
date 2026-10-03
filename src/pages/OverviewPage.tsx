@@ -104,7 +104,12 @@ export function OverviewPage() {
         <Card
           title="Similarity precompute"
           action={
-            <Button variant="primary" disabled={job?.running} onClick={() => void api.triggerPrecompute().then(loadJob)}>
+            <Button
+              variant="primary"
+              disabled={job?.running || api.mode === 'live'}
+              title={api.mode === 'live' ? 'Not available on this engine yet' : undefined}
+              onClick={() => void api.triggerPrecompute().then(loadJob)}
+            >
               {job?.running ? 'Running…' : 'Run now'}
             </Button>
           }

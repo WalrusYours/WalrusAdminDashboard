@@ -1,6 +1,6 @@
 // Parse, validate, diff and edit WALRUS schema YAML in the browser. Mirrors the server's
 // semantic checks (ARCHITECTURE.md 2.2) so feedback is instant.
-import { parse, parseDocument } from 'yaml'
+import { isSeq, parse, parseDocument, type YAMLMap } from 'yaml'
 import type { SchemaDiff, ValidationError, Verdict } from '../api/types'
 import { compile } from './expr'
 
@@ -326,4 +326,55 @@ export function resolveWeights(
     }
   }
   return { weights, meta, errors }
+}
+
+// ---------- graph edits: each returns new YAML text and keeps comments ----------
+
+export function setInteractionField(
+  text: string,
+  name: string,
+  field: 'weight' | 'half_life' | 'target' | 'value' | 'transform',
+  value: number | string | null,
+): string {
+  const doc = parseDocument(text)
+  const path = ['interactions', name, field]
+  if (value === null || value === '') doc.deleteIn(path)
+  else doc.setIn(path, typeof value === 'number' ? r3(value) : value)
+  return doc.toString()
+}
+
+export function addInteraction(text: string, name: string, weight: number, halfLife: string): string {
+  const doc = parseDocument(text)
+  const node = doc.createNode(halfLife ? { weight: r3(weight), half_life: halfLife } : { weight: r3(weight) }) as YAMLMap
+  node.flow = true
+  doc.setIn(['interactions', name], node)
+  return doc.toString()
+}
+
+export function removeInteraction(text: string, name: string): string {
+  const doc = parseDocument(text)
+  doc.deleteIn(['interactions', name])
+  return doc.toString()
+}
+
+export function setSimilarityWeight(text: string, entity: string, index: number, weight: number): string {
+  const doc = parseDocument(text)
+  doc.setIn(['similarity', entity, index, 'weight'], r3(weight))
+  return doc.toString()
+}
+
+export function removeSimilarityTerm(text: string, entity: string, index: number): string {
+  const doc = parseDocument(text)
+  doc.deleteIn(['similarity', entity, index])
+  return doc.toString()
+}
+
+export function setKnobMap(text: string, knobId: string, target: string, expr: string): string {
+  const doc = parseDocument(text)
+  const knobs = doc.get('knobs')
+  if (!isSeq(knobs)) return text
+  const index = knobs.items.findIndex((k) => (k as YAMLMap).get('id') === knobId)
+  if (index < 0) return text
+  doc.setIn(['knobs', index, 'maps', target], expr)
+  return doc.toString()
 }

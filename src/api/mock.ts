@@ -89,6 +89,14 @@ export class MockApi implements WalrusApi {
     }
   }
 
+  async session() {
+    return true
+  }
+
+  async login() {}
+
+  async logout() {}
+
   async health() {
     return delay({ status: 'ok', version: 'mock-0.1.0', instance_id: '3f9a1c7e5b2d4a60', instance_name: 'walrus-demo' }, 60)
   }

@@ -18,11 +18,19 @@
   --color-warn: #e8b04b;
   --color-bad: #ff8a80;
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+  --font-mono: "JetBrains Mono", Consolas, Menlo, monospace;
 }
 
 :root {
   color-scheme: dark;
+}
+
+/* The bundled font joins characters like <-> and ==; keep them plain. */
+.font-mono,
+code,
+textarea {
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "calt" 0;
 }
 
 body {
