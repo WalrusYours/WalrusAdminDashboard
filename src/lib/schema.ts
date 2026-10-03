@@ -98,8 +98,10 @@ export function validateSchema(text: string): ValidationError[] {
       terms.forEach((t, i) => {
         const p = `similarity.${ent}[${i}]`
         if (!isObj(t)) return add(p, 'term must be a mapping')
-        if (typeof t.on === 'string' && !(attrsOf[ent] ?? []).includes(t.on))
-          add(`${p}.on`, `"${t.on}" is not an attribute of ${ent}`)
+        const ons = typeof t.on === 'string' ? [t.on] : Array.isArray(t.on) ? t.on : []
+        for (const on of ons) {
+          if (!(attrsOf[ent] ?? []).includes(String(on))) add(`${p}.on`, `"${on}" is not an attribute of ${ent}`)
+        }
         if (typeof t.metric !== 'string' || !METRICS.includes(t.metric))
           add(`${p}.metric`, `metric must be one of ${METRICS.join(', ')}`)
         if (t.on !== undefined && typeof t.weight !== 'number') add(`${p}.weight`, 'weight must be a number')
