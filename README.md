@@ -31,8 +31,8 @@ WALRUS_ADMIN_KEY=choose-a-key go run ./cmd/walrus      # listens on :8080
 
 Then sign in with that key. Set `WALRUS_URL` if the engine is not on http://localhost:8080.
 
-With Docker (from the repo root): `docker compose --profile demo up --build dashboard`,
-then open http://localhost:3001.
+With Docker (from the repo root): `docker compose up --build dashboard`
+(this also starts the engine and Neo4j it depends on), then open http://localhost:3001.
 
 ## Pages
 
