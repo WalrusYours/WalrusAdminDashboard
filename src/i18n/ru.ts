@@ -310,4 +310,77 @@ export const ru: Dict = {
     other: '{count} типа взаимодействий',
   },
   '{count} more': { one: 'ещё {count}', few: 'ещё {count}', many: 'ещё {count}', other: 'ещё {count}' },
+
+  // trends
+  Trends: 'Тренды',
+  'Add a trend': 'Добавить тренд',
+  'Remove trend': 'Удалить тренд',
+  'Define what counts as trending on your platform. Popular means a lot of engagement; trending means engagement well above what is ordinary. Edits go into the schema draft; publish them from the Schema page.':
+    'Определите, что считается трендом на вашей платформе. Популярное — это много вовлечённости; тренд — вовлечённость заметно выше обычной. Правки попадают в черновик схемы; опубликуйте их на странице «Схема».',
+  'No trend is defined yet. A trend signal compares recent engagement with what is ordinary and rewards items that are speeding up.':
+    'Тренд ещё не определён. Сигнал тренда сравнивает недавнюю вовлечённость с обычной и поощряет элементы, которые набирают скорость.',
+  'A knob maps to this signal, so it cannot be removed.': 'Этот сигнал используется регулятором, поэтому его нельзя удалить.',
+  'This trend has validation problems': 'У этого тренда есть ошибки проверки',
+  minutes: 'минут',
+  hours: 'часов',
+  days: 'дней',
+  weeks: 'недель',
+  'An item is trending when at least {min} different people engage with it ({of}) within the last {window}':
+    'Элемент в тренде, когда минимум {min} разных людей взаимодействуют с ним ({of}) за последние {window}',
+  'An item is trending when it gets at least {min} engagements ({of}) within the last {window}':
+    'Элемент в тренде, когда он набирает минимум {min} взаимодействий ({of}) за последние {window}',
+  ', at {ratio}× the pace it kept over the previous {baseline}.':
+    ', в {ratio} раз быстрее темпа, который у него был за предыдущие {baseline}.',
+  ', at {ratio}× the pace that items of the same age usually keep.':
+    ', в {ratio} раз быстрее обычного темпа элементов того же возраста.',
+  ', at {ratio}× the pace that items of the same age usually keep while it is new, and at {ratio}× its own pace over the previous {baseline} once it has history.':
+    ', в {ratio} раз быстрее обычного темпа элементов того же возраста, пока он новый, и в {ratio} раз быстрее его собственного темпа за предыдущие {baseline}, когда у него появится история.',
+  'Recent period': 'Недавний период',
+  'How recent "now" is: engagement inside this period counts as recent.':
+    'Насколько «сейчас» недавнее: вовлечённость внутри этого периода считается недавней.',
+  'Compared with': 'Сравнивать с',
+  'Its own earlier pace': 'Его собственный прежний темп',
+  'Items of the same age': 'Элементы того же возраста',
+  Automatic: 'Автоматически',
+  'Its own earlier pace catches comebacks. Items of the same age judges new items fairly. Automatic uses the first once an item has enough history, the second before.':
+    'Его собственный прежний темп находит возвращения. Элементы того же возраста справедливо оценивают новое. Автоматически берёт первое, когда у элемента достаточно истории, и второе до этого.',
+  'Ordinary period': 'Обычный период',
+  "How far back an item's own ordinary pace is measured. It must be longer than the recent period.":
+    'За какой срок измеряется обычный темп самого элемента. Он должен быть длиннее недавнего периода.',
+  'Item age from': 'Возраст элемента из',
+  "The timestamp attribute that gives an item's age.": 'Атрибут со временем, по которому определяется возраст элемента.',
+  'Counted as': 'Считать как',
+  'Different people': 'Разные люди',
+  'Every event': 'Каждое событие',
+  'Different people resists one person repeating an action.': 'Разные люди защищают от того, что один человек повторяет действие.',
+  'Minimum engagement': 'Минимальная вовлечённость',
+  'Fewer than this in the recent period is never a trend, however fast it grows.':
+    'Меньше этого за недавний период — никогда не тренд, как бы быстро он ни рос.',
+  'Times its usual pace': 'Во сколько раз быстрее обычного',
+  'How far above ordinary counts as trending. 2 means twice the usual pace.':
+    'Насколько выше обычного считается трендом. 2 означает вдвое быстрее обычного.',
+  'Weight when no knob is touched': 'Вес, если регуляторы не тронуты',
+  'How much trending counts in the score by default. Users move it with their knob.':
+    'Насколько тренд учитывается в оценке по умолчанию. Пользователи меняют это своим регулятором.',
+  'What counts as engagement': 'Что считается вовлечённостью',
+  'Interactions with a negative weight never count, so controversy is not a trend.':
+    'Взаимодействия с отрицательным весом не учитываются, поэтому споры не становятся трендом.',
+  'Every positive interaction': 'Каждое положительное взаимодействие',
+  'Examples with this definition': 'Примеры для этого определения',
+  'Popular counts how much engagement an item has. Trending counts how far it is above what is ordinary, so a huge steady post is popular but not trending.':
+    'Популярность показывает, сколько у элемента вовлечённости. Тренд показывает, насколько она выше обычной, поэтому огромный, но стабильный пост популярен, но не в тренде.',
+  'A steady popular post': 'Стабильно популярный пост',
+  'A new post with a fast start': 'Новый пост с быстрым стартом',
+  'A slight uptick': 'Небольшой рост',
+  'A tiny burst': 'Крошечная вспышка',
+  'A comeback': 'Возвращение',
+  Recent: 'Недавно',
+  Usual: 'Обычно',
+  Popular: 'Популярность',
+  Trending: 'В тренде',
+  'below the minimum': 'ниже минимума',
+  'not far enough above ordinary': 'недостаточно выше обычного',
+  'Engagement in the recent period': 'Вовлечённость за недавний период',
+  'Usual for it': 'Обычно для него',
+  '{pace}× its usual pace': '{pace}× от обычного темпа',
 }

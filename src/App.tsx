@@ -9,6 +9,7 @@ import { OverviewPage } from './pages/OverviewPage'
 import { SchemaPage } from './pages/SchemaPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { TenantsPage } from './pages/TenantsPage'
+import { TrendsPage } from './pages/TrendsPage'
 import { WeightsPage } from './pages/WeightsPage'
 
 export default function App() {
@@ -24,6 +25,7 @@ export default function App() {
               <Route index element={<OverviewPage />} />
               <Route path="schema" element={<SchemaPage />} />
               <Route path="weights" element={<WeightsPage />} />
+              <Route path="trends" element={<TrendsPage />} />
               <Route path="tenants" element={<TenantsPage />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="*" element={<OverviewPage />} />

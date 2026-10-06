@@ -1,0 +1,95 @@
+name: Release
+
+# Push a tag like v1.2.3 (or v1.2.3-rc.1 for a pre-release) and this publishes:
+#   - a multi-arch nginx image at <dockerhub-user>/walrus-dashboard (bind it to an engine with WALRUS_UPSTREAM)
+#   - the static bundle as a tarball, for hosting behind your own reverse proxy
+#   - a GitHub Release with generated notes
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint
+      - run: npm run check:i18n
+      - run: npm run build
+
+  image:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      # Tags: 1.2.3, 1.2, 1 and latest for a stable tag; only 1.2.3-rc.1 for a pre-release.
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/walrus-dashboard
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+      # The build stage runs on the runner's architecture and only the nginx layer is per-arch,
+      # so no QEMU.
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  release:
+    needs: [test, image]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - name: Package the static bundle
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          NAME="walrus-dashboard_${VERSION}"
+          mkdir -p out
+          tar -czf "out/$NAME.tar.gz" --transform "s,^dist,$NAME," dist
+          (cd out && sha256sum "$NAME.tar.gz" > SHA256SUMS)
+      - name: Create or update the GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          # A tag with a hyphen (v1.2.3-rc.1) is a pre-release.
+          PRE=""; case "$GITHUB_REF_NAME" in *-*) PRE="--prerelease" ;; esac
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" out/* --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" out/* \
+              --verify-tag --generate-notes --title "$GITHUB_REF_NAME" $PRE
+          fi

@@ -41,6 +41,7 @@ then open http://localhost:3001.
 | Overview | server health, active schema summary, similarity precompute status and trigger |
 | Schema | upload or edit YAML, live validation, diff vs the active version (additive or breaking), dry run, apply, version history |
 | Weights | edit each signal's default weight, try the user knobs and presets, see the resolved weights, save presets; edits go into the schema draft |
+| Trends | define what counts as trending: the recent period, what it is compared with (its own earlier pace, items of the same age, or automatic), what counts as engagement, the minimum and the ratio; reads back as a sentence, previews popular versus trending, validates like the engine; edits go into the schema draft |
 | Tenants & keys | switch tenant, create tenants, issue scoped keys (secret shown once), revoke |
 
 ## How it works

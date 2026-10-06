@@ -4,7 +4,7 @@ import type { Health } from '../api/types'
 import { useApp } from '../context/appContext'
 import { useDraft } from '../context/draftContext'
 import { useI18n } from '../i18n/i18nContext'
-import { IconGear, IconHome, IconKey, IconSchema, IconSliders } from './icons'
+import { IconGear, IconHome, IconKey, IconSchema, IconSliders, IconTrend } from './icons'
 import { Logo } from './Logo'
 import { cx } from './ui'
 
@@ -12,6 +12,7 @@ const NAV = [
   { to: '/', label: 'Overview', icon: <IconHome />, end: true },
   { to: '/schema', label: 'Schema', icon: <IconSchema /> },
   { to: '/weights', label: 'Weights', icon: <IconSliders /> },
+  { to: '/trends', label: 'Trends', icon: <IconTrend /> },
   { to: '/tenants', label: 'Tenants & keys', icon: <IconKey /> },
 ]
 
@@ -63,7 +64,7 @@ export function Layout() {
             <NavLink key={n.to} to={n.to} end={n.end} className={navClass}>
               {n.icon}
               {t(n.label)}
-              {n.to === '/weights' && dirty && <span className="ml-auto size-2 rounded-full bg-accent" title={t('Unsaved changes')} />}
+              {(n.to === '/weights' || n.to === '/trends') && dirty && <span className="ml-auto size-2 rounded-full bg-accent" title={t('Unsaved changes')} />}
             </NavLink>
           ))}
         </nav>

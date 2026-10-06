@@ -1,5 +1,7 @@
 # Standalone build, context = this folder:  docker build -t walrus-dashboard walrus-dashboard-client/
-FROM node:22-alpine AS build
+# The bundle is static files, so the build stage always runs on the build host's architecture and
+# the multi-arch image needs no QEMU.
+FROM --platform=$BUILDPLATFORM node:22-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm install --no-audit --no-fund

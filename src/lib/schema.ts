@@ -3,6 +3,7 @@
 import { isSeq, parse, parseDocument, type YAMLMap } from 'yaml'
 import type { SchemaDiff, ValidationError, Verdict } from '../api/types'
 import { compile } from './expr'
+import { rankedAttributes, rankedHasCreated, validateTrendSignal } from './trend'
 
 export const IDENT = /^[a-z][a-z0-9_]*$/
 export const ATTR_TYPES = ['categorical', 'float', 'int', 'bool', 'string', 'set', 'timestamp', 'vector', 'ref']
@@ -15,13 +16,93 @@ export const SIGNAL_TYPES = [
   'low_exposure',
   'attribute_match',
   'diversity_rerank',
+  'trend',
+  // schema v2 (SCHEMA-V2.md 4.6)
+  'co_occurrence',
+  'sequence',
+  'mutual_connections',
+  'attribute_target',
+  'attribute_value',
+  'context_match',
+  'provided',
+  'formula',
+  'satiation',
+  'recurrence',
 ]
 export const METRICS = ['jaccard', 'cosine', 'equals', 'log_ratio']
 /** knob map targets that are not signals */
 export const META_TARGETS = ['interactions.half_life_scale', 'constraint.energy_center']
+/** a schema duration: 3d, 12h, 2w, 1y */
+export const DURATION = /^\d+(\.\d+)?[smhdwy]$/
 
 type Obj = Record<string, unknown>
 const isObj = (v: unknown): v is Obj => typeof v === 'object' && v !== null && !Array.isArray(v)
+
+/**
+ * A user-facing text is a string or a map from locale to string (schema v2). Returns the
+ * string in the given locale, falling back to the default locale, or undefined.
+ */
+export function textIn(v: unknown, locale: string, fallback: string): string | undefined {
+  if (typeof v === 'string') return v
+  if (!isObj(v)) return undefined
+  const pick = (l: string) => (typeof v[l] === 'string' && (v[l] as string).trim() ? (v[l] as string) : undefined)
+  return pick(locale) ?? pick(fallback)
+}
+
+function defaultLocale(value: Obj): string {
+  const meta = isObj(value.meta) ? value.meta : {}
+  if (typeof meta.default_locale === 'string') return meta.default_locale
+  if (Array.isArray(meta.locales) && typeof meta.locales[0] === 'string') return meta.locales[0]
+  return 'en'
+}
+
+/** A knob's range: declared, [0, 1] for a toggle, the option values' span for a choice. */
+function knobRange(k: Obj): [number, number] | null {
+  if (Array.isArray(k.range)) {
+    return k.range.length === 2 && k.range.every((n) => typeof n === 'number')
+      ? [k.range[0] as number, k.range[1] as number]
+      : null
+  }
+  if (k.kind === 'toggle') return [0, 1]
+  if (k.kind === 'choice' && Array.isArray(k.options)) {
+    const values = k.options.filter(isObj).map((o) => Number(o.value))
+    if (values.length > 0 && values.every(Number.isFinite)) return [Math.min(...values), Math.max(...values)]
+  }
+  return null
+}
+
+/**
+ * Whether a dotted knob target names something that exists (SCHEMA-V2.md 4.9). The engine
+ * checks the finer rules (locked terms, seeds); this keeps the dashboard from flagging a valid
+ * v2 schema.
+ */
+function knobTargetExists(value: Obj, target: string): boolean {
+  const p = target.split('.')
+  const get = (o: unknown, k: string) => (isObj(o) ? o[k] : undefined)
+  const signals = get(value, 'signals')
+  const byId = (list: unknown, id: string) => Array.isArray(list) && list.some((x) => isObj(x) && x.id === id)
+  if (p[0] === 'signals' && p.length === 3 && p[2] === 'weight') return isObj(get(signals, p[1]))
+  if (p[0] === 'signals' && p.length === 4 && p[2] === 'from') {
+    const from = get(get(signals, p[1]), 'from')
+    return from === p[3] || (Array.isArray(from) && from.includes(p[3]))
+  }
+  if (p[0] === 'similarity' && p.length === 4 && p[3] === 'weight') {
+    const terms = get(get(value, 'similarity'), p[1])
+    return Array.isArray(terms) && terms.some((t) => isObj(t) && (t.id ?? [t.on].flat().join('_')) === p[2])
+  }
+  if (p[0] === 'interactions' && p.length === 3 && (p[2] === 'weight_scale' || p[2] === 'half_life_scale'))
+    return isObj(get(get(value, 'interactions'), p[1]))
+  if (p[0] === 'attribute' && p.length === 4 && p[3] === 'target')
+    return isObj(get(get(get(get(value, 'entities'), p[1]), 'attributes'), p[2]))
+  if (p[0] === 'rules' && p.length === 3 && p[2] === 'strength') return byId(value.rules, p[1])
+  if (p[0] === 'recommenders' && p.length >= 3) {
+    const r = get(get(value, 'recommenders'), p[1])
+    if (!isObj(r)) return false
+    if (p.length === 3) return ['diversity', 'blend_user', 'seed_aggregate'].includes(p[2])
+    return p.length === 4 && p[2] === 'mix'
+  }
+  return false
+}
 
 export interface SignalInfo {
   id: string
@@ -86,14 +167,16 @@ export function validateSchema(text: string): ValidationError[] {
   for (const [name, spec] of Object.entries(interactions)) {
     const p = `interactions.${name}`
     if (!IDENT.test(name)) add(p, 'identifier must match ^[a-z][a-z0-9_]*$')
-    if (!isObj(spec) || typeof spec.weight !== 'number') add(`${p}.weight`, 'weight must be a number')
-    else if (spec.half_life !== undefined && !/^\d+(\.\d+)?[smhdw]$/.test(String(spec.half_life)))
+    const exposure = isObj(spec) && spec.kind === 'exposure' // shown, not chosen: no weight
+    if (!isObj(spec) || (!exposure && typeof spec.weight !== 'number')) add(`${p}.weight`, 'weight must be a number')
+    else if (spec.half_life !== undefined && !DURATION.test(String(spec.half_life)))
       add(`${p}.half_life`, 'use a duration such as 3d, 12h, 2w')
   }
 
   if (value.similarity !== undefined) {
     const sim = isObj(value.similarity) ? value.similarity : {}
     for (const [ent, terms] of Object.entries(sim)) {
+      if (ent === 'cross') continue // cross-type terms compare two entities; the engine checks them
       if (!(ent in entities)) add(`similarity.${ent}`, 'not a declared entity')
       if (!Array.isArray(terms)) continue
       terms.forEach((t, i) => {
@@ -112,12 +195,20 @@ export function validateSchema(text: string): ValidationError[] {
 
   const signals = isObj(value.signals) ? value.signals : {}
   if (!isObj(value.signals) || Object.keys(signals).length === 0) add('signals', 'declare at least one signal')
+  const trendEnv = {
+    rankedAttrs: rankedAttributes(value),
+    hasCreated: rankedHasCreated(value),
+    interactions: Object.fromEntries(
+      Object.entries(interactions).map(([n, s]) => [n, isObj(s) && typeof s.weight === 'number' ? s.weight : 0]),
+    ),
+  }
   for (const [name, spec] of Object.entries(signals)) {
     const p = `signals.${name}`
     if (!IDENT.test(name)) add(p, 'identifier must match ^[a-z][a-z0-9_]*$')
     if (!isObj(spec) || typeof spec.type !== 'string') add(`${p}.type`, 'signal needs a type')
     else if (!SIGNAL_TYPES.includes(spec.type)) add(`${p}.type`, `unknown signal type "${spec.type}"`)
     if (!isObj(spec) || typeof spec.default !== 'number') add(`${p}.default`, 'default must be a number')
+    if (isObj(spec) && spec.type === 'trend') validateTrendSignal(p, spec, trendEnv, add)
   }
 
   const knobIds = new Set<string>()
@@ -129,20 +220,20 @@ export function validateSchema(text: string): ValidationError[] {
     if (typeof k.id !== 'string' || !IDENT.test(k.id)) add(`${p}.id`, 'id must match ^[a-z][a-z0-9_]*$')
     else if (knobIds.has(k.id)) add(`${p}.id`, `duplicate knob id "${k.id}"`)
     else knobIds.add(k.id)
-    if (typeof k.label !== 'string' || !k.label.trim())
+    const locale = defaultLocale(value)
+    if (!textIn(k.label, locale, locale)?.trim())
       add(`${p}.label`, 'label is required (plain language, shown to users)')
-    if (
-      !Array.isArray(k.range) ||
-      k.range.length !== 2 ||
-      k.range.some((n) => typeof n !== 'number') ||
-      k.range[0] >= k.range[1]
-    )
-      add(`${p}.range`, 'range must be [min, max] with min < max')
+    if (k.kind !== undefined && !['slider', 'toggle', 'choice'].includes(String(k.kind)))
+      add(`${p}.kind`, 'kind must be slider, toggle or choice')
+    const range = knobRange(k)
+    if (!range || range[0] >= range[1]) add(`${p}.range`, 'range must be [min, max] with min < max')
+    else if (typeof k.default === 'number' && (k.default < range[0] || k.default > range[1]))
+      add(`${p}.default`, `${k.default} is outside the knob range [${range[0]}, ${range[1]}]`)
     if (!isObj(k.maps) || Object.keys(k.maps).length === 0)
       return add(`${p}.maps`, 'map the knob onto at least one signal')
     for (const [target, src] of Object.entries(k.maps)) {
       const tp = `${p}.maps.${target}`
-      if (!(target in signals) && !META_TARGETS.includes(target))
+      if (!(target in signals) && !META_TARGETS.includes(target) && !knobTargetExists(value, target))
         add(tp, `"${target}" is neither a declared signal nor a known meta-parameter`)
       try {
         compile(String(src))
@@ -166,8 +257,12 @@ export function validateSchema(text: string): ValidationError[] {
     }
   }
 
-  if (value.recommendable !== undefined && !(typeof value.recommendable === 'string' && value.recommendable in entities))
-    add('recommendable', 'must name a declared entity')
+  if (value.recommendable !== undefined) {
+    // a name, or a list of names (schema v2: several recommendable types)
+    const names = Array.isArray(value.recommendable) ? value.recommendable : [value.recommendable]
+    if (names.length === 0 || names.some((n) => !(typeof n === 'string' && n in entities)))
+      add('recommendable', 'must name a declared entity')
+  }
   if (value.constraints !== undefined && !Array.isArray(value.constraints))
     add('constraints', 'constraints must be a list')
 
@@ -195,8 +290,8 @@ export function summarize(text: string): SchemaSummary | null {
     }),
     knobs: knobs.filter(isObj).map((k) => ({
       id: String(k.id),
-      label: String(k.label ?? k.id),
-      range: (Array.isArray(k.range) ? [Number(k.range[0]), Number(k.range[1])] : [0, 1]) as [number, number],
+      label: textIn(k.label, defaultLocale(value), defaultLocale(value)) ?? String(k.id),
+      range: knobRange(k) ?? [0, 1],
       maps: isObj(k.maps) ? Object.fromEntries(Object.entries(k.maps).map(([a, b]) => [a, String(b)])) : {},
     })),
     presets: Object.fromEntries(

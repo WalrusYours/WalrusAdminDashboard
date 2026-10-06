@@ -285,4 +285,77 @@ export const ro: Dict = {
   '{count} presets': { one: '{count} presetare', few: '{count} presetări', other: '{count} de presetări' },
   '{count} interaction types': { one: '{count} tip de interacțiune', few: '{count} tipuri de interacțiuni', other: '{count} de tipuri de interacțiuni' },
   '{count} more': { one: 'încă {count}', few: 'încă {count}', other: 'încă {count}' },
+
+  // trends
+  Trends: 'Trenduri',
+  'Add a trend': 'Adaugă un trend',
+  'Remove trend': 'Șterge trendul',
+  'Define what counts as trending on your platform. Popular means a lot of engagement; trending means engagement well above what is ordinary. Edits go into the schema draft; publish them from the Schema page.':
+    'Definește ce înseamnă trend pe platforma ta. Popular înseamnă multă implicare; trend înseamnă implicare mult peste normal. Modificările intră în ciorna schemei; publică-le din pagina Schemă.',
+  'No trend is defined yet. A trend signal compares recent engagement with what is ordinary and rewards items that are speeding up.':
+    'Niciun trend definit încă. Un semnal de trend compară implicarea recentă cu cea obișnuită și răsplătește elementele care prind viteză.',
+  'A knob maps to this signal, so it cannot be removed.': 'Un control este legat de acest semnal, deci nu poate fi șters.',
+  'This trend has validation problems': 'Acest trend are probleme de validare',
+  minutes: 'minute',
+  hours: 'ore',
+  days: 'zile',
+  weeks: 'săptămâni',
+  'An item is trending when at least {min} different people engage with it ({of}) within the last {window}':
+    'Un element este în trend când cel puțin {min} persoane diferite interacționează cu el ({of}) în ultimele {window}',
+  'An item is trending when it gets at least {min} engagements ({of}) within the last {window}':
+    'Un element este în trend când adună cel puțin {min} interacțiuni ({of}) în ultimele {window}',
+  ', at {ratio}× the pace it kept over the previous {baseline}.':
+    ', într-un ritm de {ratio}× față de ritmul pe care l-a avut în ultimele {baseline}.',
+  ', at {ratio}× the pace that items of the same age usually keep.':
+    ', într-un ritm de {ratio}× față de ritmul obișnuit al elementelor de aceeași vârstă.',
+  ', at {ratio}× the pace that items of the same age usually keep while it is new, and at {ratio}× its own pace over the previous {baseline} once it has history.':
+    ', într-un ritm de {ratio}× față de ritmul obișnuit al elementelor de aceeași vârstă cât timp este nou, și de {ratio}× față de propriul ritm din ultimele {baseline}, odată ce are istoric.',
+  'Recent period': 'Perioada recentă',
+  'How recent "now" is: engagement inside this period counts as recent.':
+    'Cât de recent este „acum”: implicarea din această perioadă contează ca recentă.',
+  'Compared with': 'Comparat cu',
+  'Its own earlier pace': 'Propriul ritm anterior',
+  'Items of the same age': 'Elemente de aceeași vârstă',
+  Automatic: 'Automat',
+  'Its own earlier pace catches comebacks. Items of the same age judges new items fairly. Automatic uses the first once an item has enough history, the second before.':
+    'Propriul ritm anterior prinde revenirile. Elementele de aceeași vârstă judecă corect elementele noi. Automat îl folosește pe primul când elementul are destul istoric, pe al doilea înainte.',
+  'Ordinary period': 'Perioada obișnuită',
+  "How far back an item's own ordinary pace is measured. It must be longer than the recent period.":
+    'Cât de mult în urmă se măsoară ritmul obișnuit al elementului. Trebuie să fie mai lungă decât perioada recentă.',
+  'Item age from': 'Vârsta elementului din',
+  "The timestamp attribute that gives an item's age.": 'Atributul de tip timp care dă vârsta elementului.',
+  'Counted as': 'Numărat ca',
+  'Different people': 'Persoane diferite',
+  'Every event': 'Fiecare eveniment',
+  'Different people resists one person repeating an action.': 'Persoanele diferite previn repetarea unei acțiuni de către aceeași persoană.',
+  'Minimum engagement': 'Implicare minimă',
+  'Fewer than this in the recent period is never a trend, however fast it grows.':
+    'Mai puțin decât atât în perioada recentă nu este niciodată trend, oricât de repede crește.',
+  'Times its usual pace': 'De câte ori ritmul obișnuit',
+  'How far above ordinary counts as trending. 2 means twice the usual pace.':
+    'Cât de mult peste normal contează ca trend. 2 înseamnă dublul ritmului obișnuit.',
+  'Weight when no knob is touched': 'Ponderea când nu e atins niciun control',
+  'How much trending counts in the score by default. Users move it with their knob.':
+    'Cât contează trendul în scor implicit. Utilizatorii o schimbă cu controlul lor.',
+  'What counts as engagement': 'Ce contează ca implicare',
+  'Interactions with a negative weight never count, so controversy is not a trend.':
+    'Interacțiunile cu pondere negativă nu contează niciodată, deci controversa nu este trend.',
+  'Every positive interaction': 'Orice interacțiune pozitivă',
+  'Examples with this definition': 'Exemple pentru această definiție',
+  'Popular counts how much engagement an item has. Trending counts how far it is above what is ordinary, so a huge steady post is popular but not trending.':
+    'Popularitatea arată cât de multă implicare are un element. Trendul arată cât de mult depășește implicarea normalul, deci o postare uriașă dar constantă este populară, nu în trend.',
+  'A steady popular post': 'O postare populară și stabilă',
+  'A new post with a fast start': 'O postare nouă cu un start rapid',
+  'A slight uptick': 'O mică creștere',
+  'A tiny burst': 'O mică explozie',
+  'A comeback': 'O revenire',
+  Recent: 'Recent',
+  Usual: 'Obișnuit',
+  Popular: 'Popularitate',
+  Trending: 'În trend',
+  'below the minimum': 'sub minim',
+  'not far enough above ordinary': 'nu destul de peste normal',
+  'Engagement in the recent period': 'Implicare în perioada recentă',
+  'Usual for it': 'Obișnuit pentru el',
+  '{pace}× its usual pace': '{pace}× ritmul său obișnuit',
 }

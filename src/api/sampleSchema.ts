@@ -33,6 +33,7 @@ signals:
   content:       { type: item_neighbors,   default: 0.5 }
   collaborative: { type: user_neighbors,   default: 0.5 }
   popularity:    { type: global_count,     default: 0.1, window: 7d }
+  trending:      { type: trend,            default: 0.2, on: created_at, window: 6h, baseline: 7d, against: auto, of: [like, comment, view], count: people, min: 3, ratio: 2 }
   recency:       { type: age_decay,        default: 0.3, on: created_at, half_life: 2d }
   exploration:   { type: low_exposure,     default: 0.1 }
   author_spread: { type: diversity_rerank, default: 0.3, on: author_id }
