@@ -29,7 +29,7 @@ export const SIGNAL_TYPES = [
   'satiation',
   'recurrence',
 ]
-export const METRICS = ['jaccard', 'cosine', 'equals', 'log_ratio']
+export const METRICS = ['jaccard', 'cosine', 'equals', 'log_ratio', 'closeness']
 /** knob map targets that are not signals */
 export const META_TARGETS = ['interactions.half_life_scale', 'constraint.energy_center']
 /** a schema duration: 3d, 12h, 2w, 1y */
